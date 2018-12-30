@@ -88,4 +88,45 @@ java 版本增加 pinchZoom 方法，对屏幕进行缩放
 	#加载需要对比的目标图片
 	#load = image.loadImage(os.getcwd() + "\\image.png")
 	#print image.screenShot().subImage(icon).sameAs(load)
-```
+	
+	#等待图片显示,返回图片的中心坐标(sec为最长等待时间)
+    def waitUntilDisplay(devicename, pic, sec=5):
+        image = ImageUtils(devicename)
+        id = devicename[13:14]
+        image.screenShot(id)
+        temppath = tempfile.gettempdir()
+        origin = r"%s\%stemp.png" % (temppath, id)
+        count = 0
+        while not image.exist(pic, origin):
+            time.sleep(1)
+            image.screenShot(id)
+            count += 1
+            if count > (sec):
+                return False
+        else:
+            print('until find pic!')
+            loc = image.findpic(pic, origin)
+            return loc
+
+    #保持等待到图片显示(sec为最长等待时间)
+    def waitUntilD(devicename, pic, sec=5):
+        image = ImageUtils(devicename)
+        id = devicename[13:14]
+        image.screenShot(id)
+        temppath = tempfile.gettempdir()
+        origin = r"%s\%stemp.png" % (temppath, id)
+        count = 0
+        while not image.exist(pic, origin):
+            time.sleep(1)
+            image.screenShot(id)
+            count += 1
+            if count > (sec):
+                raise Nopicerror
+
+    #等待图片出现并点击(sec为最长等待时间)
+    def waitToClick(devicename, adb, pic ,time=5):
+        loc = waitUntilDisplay(devicename, pic, time)
+        if loc is not False:
+            adb.touch(x=loc[0], y=loc[1])
+        else:
+            raise Nopicerror('cannot find pic !! please confirm')
