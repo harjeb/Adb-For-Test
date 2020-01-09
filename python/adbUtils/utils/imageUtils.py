@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
 '''
@@ -13,7 +13,7 @@ import tempfile
 import os
 import shutil
 from PIL import Image
-
+import cv2
 from adbUtils import ADB
 
 PATH = lambda p: os.path.abspath(p)
@@ -27,13 +27,14 @@ class ImageUtils(object):
         self.utils = ADB(device_id)
         self.tempFile = tempfile.gettempdir()
 
-    def screenShot(self):
+    def screenShot(self, device):
         """
         截取设备屏幕
         """
-        self.utils.shell("screencap -p /data/local/tmp/temp.png").wait()
-        self.utils.adb("pull /data/local/tmp/iuniTemp.png %s" %self.tempFile).wait()
-
+        temp = device + 'temp'
+        self.utils.shell("screencap -p /sdcard/%s.png" % temp).wait()
+        self.utils.adb("pull /sdcard/%s.png %s" % (temp, self.tempFile)).wait()
+        self.utils.shell('rm /sdcard/*.png')
         return self
 
     def writeToFile(self, dirPath, imageName, form = "png"):
@@ -55,7 +56,7 @@ class ImageUtils(object):
             load = Image.open(imageName)
             return load
         else:
-            print "image is not exist"
+            print("image is not exist")
 
     def subImage(self, box):
         """
@@ -92,3 +93,39 @@ class ImageUtils(object):
             return True
         else:
             return False
+
+    # calc center point
+    def findpic(self, template, origin, value=0.8):
+        """
+        返回找到图片的中心点坐标
+        template 为需要寻找的部分图片path
+        origin 为全图path
+        0.8 为 80%相似度
+        usage：
+            image = ImageUtils(devicename)
+            loc = image.findpic(pic, origin)
+        """
+        img = cv2.imread(origin, 0)
+        template = cv2.imread(template, 0)
+        w, h = template.shape[::-1]
+        res = cv2.matchTemplate(img,template,cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        if max_val > value:
+            top_left = max_loc
+            bottom_right = (top_left[0] + w, top_left[1] + h)
+            loc = (int((bottom_right[0]+top_left[0])/2), int((bottom_right[1]+top_left[1])/2))
+            return loc
+        else:
+            print('Not found pic!!!')
+            return None
+
+    def exist(self, temp, origin, value=0.8):
+        img = cv2.imread(origin, 0)
+        template = cv2.imread(temp, 0)
+        res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        if max_val > value:
+            return True
+        else:
+            return False
+

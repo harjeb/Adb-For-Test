@@ -3,6 +3,10 @@
 
 通过 `adb 命令`实现简单的点击、滑动、长按等效果，可通过比例定位元素、通过元素定位（需要 Android 版本高于 4.0），用于`Android Test`，拥有 monkeyrunner 的绝大部分功能 
 
+### 2018.12.30
+修改 `python 版本`中的 imageUtils 模块， 添加了使用 `opencv` 返回要查找图片的中心坐标和查询图片是否存在功能，可以通过参数设置相似度阈值。
+screenShot功能添加device参数，用于多设备时的截图区分
+
 ### 2018.05.17
 python 版本获取分辨率方法添加对 4.3 及以上机型通过`wm size`命令获取
 
@@ -84,4 +88,45 @@ java 版本增加 pinchZoom 方法，对屏幕进行缩放
 	#加载需要对比的目标图片
 	#load = image.loadImage(os.getcwd() + "\\image.png")
 	#print image.screenShot().subImage(icon).sameAs(load)
-```
+	
+	#等待图片显示,返回图片的中心坐标(sec为最长等待时间)
+    def waitUntilDisplay(devicename, pic, sec=5):
+        image = ImageUtils(devicename)
+        id = devicename[13:14]
+        image.screenShot(id)
+        temppath = tempfile.gettempdir()
+        origin = r"%s\%stemp.png" % (temppath, id)
+        count = 0
+        while not image.exist(pic, origin):
+            time.sleep(1)
+            image.screenShot(id)
+            count += 1
+            if count > (sec):
+                return False
+        else:
+            print('until find pic!')
+            loc = image.findpic(pic, origin)
+            return loc
+
+    #保持等待到图片显示(sec为最长等待时间)
+    def waitUntilD(devicename, pic, sec=5):
+        image = ImageUtils(devicename)
+        id = devicename[13:14]
+        image.screenShot(id)
+        temppath = tempfile.gettempdir()
+        origin = r"%s\%stemp.png" % (temppath, id)
+        count = 0
+        while not image.exist(pic, origin):
+            time.sleep(1)
+            image.screenShot(id)
+            count += 1
+            if count > (sec):
+                raise Nopicerror
+
+    #等待图片出现并点击(sec为最长等待时间)
+    def waitToClick(devicename, adb, pic ,time=5):
+        loc = waitUntilDisplay(devicename, pic, time)
+        if loc is not False:
+            adb.touch(x=loc[0], y=loc[1])
+        else:
+            raise Nopicerror('cannot find pic !! please confirm')
