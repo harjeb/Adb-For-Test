@@ -9,7 +9,7 @@ import subprocess
 import re
 from time import sleep
 
-import keycode
+from adbUtils.utils import keycode
 
 
 PATH = lambda p: os.path.abspath(p)
